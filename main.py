@@ -3,7 +3,7 @@ import common_data
 import re
 import sys
 
-fieldnames = ["date", "ddt", "model", "matricola", "shop", "legacy","verified","no_mat_found","negative_model_number"]
+fieldnames = ["date", "ddt", "model", "matricola", "shop", "legacy", "verified", "no_mat_found", "negative_model_number"]
 
 def extract(dic_reader, SHOP, MAT):
     data_to_write = []

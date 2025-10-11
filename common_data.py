@@ -1,3 +1,5 @@
+# Here you can provide your keys with the associated regular expression to match
+
 models = {
     "franza": "^[exban]+[0-9]{4,6}[abn]*",
     "franza 2.0": "^[exban]+[0-9]{4,6}[abn]*",
@@ -17,22 +19,3 @@ models = {
     "ciao": "UNDEFINED1",
     "dory": "UNDEFINED2"
 }
-
-models2 = [
-    'franza',
-    'lola ciao',
-    'flexy',
-    'vergnano 3',
-    'franza 2.0',
-    'my-space',
-    'dory',
-    'escm 001',
-    'ep mini',
-    'aroma x',
-    'faber',
-    'frog',
-    'frog vap',
-    'my pods my pure',
-    'isotta',
-    'ciao'
-]
