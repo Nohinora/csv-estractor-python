@@ -3,20 +3,22 @@ import common_data
 import re
 import sys
 
-def extract(input_file, output_file, SHOP, MAT):
-    no_mat = 0 # matricola da dare alle macchine senza
-    count = 0
 
-    data_to_write = []
+data_to_write = []
+
+def extract(input_file, output_file, SHOP, MAT):
+    no_mat_count = 0 # matricola da dare alle macchine senza
+    count = 0
 
     with open(input_file,'r') as f:
         dicReader = csv.DictReader(f)
+        num_of_mat = count_mat_columns(dicReader)
 
         for line in dicReader:
             # Estrazione matricole del giorno
             matricole = []
-            for i in range(24):
-                matricola = line['matricola ' + str(i+1)]
+            for i in range(num_of_mat):
+                matricola = line['matricola' + str(i+1)]
                 if matricola != '':
                     matricole.append(matricola)
 
@@ -24,47 +26,30 @@ def extract(input_file, output_file, SHOP, MAT):
             for model in common_data.models.keys():
                 if line[model] == '': continue # se ci sono zero modelli passo a quello successivo
 
-                model_ammount = int(line[model]) # numero di macchine corrispondenti a questo modello
+                model_amount = int(line[model]) # numero di macchine corrispondenti a questo modello
 
-                # inizio il cilclo per l'associazione matricola modello, itero per il numero di modelli
-                for i in range(model_ammount):
-
-                    # itero per cercare una corrispondenza nel vettore delle matricole del giorno
-                    for idx, matricola in enumerate(matricole):
-
-                        # in caso di corrispondenza elimino la matricola dal vettore, diminuisco la conta del modello corrente e esco da questo ciclo poichè ho associato al modello corrente la sua matricola
-                        if re.search(common_data.models[model],matricola):
+                for i in range(model_amount): # inizio il cilclo per l'associazione matricola modello, itero per il numero di modelli
+                    for idx, matricola in enumerate(matricole): # itero per cercare una corrispondenza nel vettore delle matricole del giorno
+                        if re.search(common_data.models[model],matricola): # in caso di corrispondenza elimino la matricola dal vettore, diminuisco la conta del modello corrente e esco da questo ciclo poichè ho associato al modello corrente la sua matricola
                             matricole.pop(idx)
-                            model_ammount -= 1
+                            model_amount -= 1
                             count += 1
-                            data_to_write.append({
-                                "date": line["date"],
-                                "ddt": line["ddt"],
-                                "model": model,
-                                "matricola": matricola,
-                                "shop": SHOP,
-                                "legacy": 1,
-                                "verified": 0,
-                                "no_mat_found": 0
-                            })
+                            data_to_write.append(generate_entry(line, model, matricola, SHOP, 0))
                             break
 
                 # Handle macchine senza matricole
-                if model_ammount != 0:
-                    for no_mat_model in range(model_ammount):
-                        no_mat += 1
-                        count += 1
-                        print(f"{line['date']}, {model}, {MAT}-{no_mat:03}")
-                        data_to_write.append({
-                            "date": line["date"],
-                            "ddt": line["ddt"],
-                            "model": model,
-                            "matricola": f"{MAT}-{no_mat:03}",
-                            "shop": SHOP,
-                            "legacy": 1,
-                            "verified": 0,
-                            "no_mat_found": 1
-                        })
+                while model_amount > 0:
+                    model_amount -= 1
+                    no_mat_count += 1
+                    count += 1
+                    print(f"{line['date']}, {model}, {MAT}-{no_mat_count:03}")
+                    data_to_write.append(generate_entry(line, model, f"{MAT}-{no_mat_count:03}", SHOP, 1))
+            
+            #matricole avanzate
+            if len(matricole) > 0:
+                for matricola in matricole:
+                    data_to_write.append(generate_entry(line, "matricola_avanzata", matricola, SHOP, 0))
+                    print("matricola avanzata: " + matricola)
 
     print(count) # per coffee energy: 372
 
@@ -74,10 +59,32 @@ def extract(input_file, output_file, SHOP, MAT):
         writer.writeheader()
         writer.writerows(data_to_write)
 
+# FUNCTIONS
+
+def generate_entry(line, model, matricola, shop, no_mat):
+    entry = {
+        "date": line["date"],
+        "ddt": line["ddt"],
+        "model": model,
+        "matricola": matricola,
+        "shop": shop,
+        "legacy": 1,
+        "verified": 0,
+        "no_mat_found": no_mat
+    }
+    return entry
+
+def count_mat_columns(dicReader):
+    count = 0
+    for field in dicReader.fieldnames:
+        if re.search("matricola", field):
+            count += 1
+    return count
+
 
 if __name__ == "__main__":
     input_file = str(sys.argv[1])
     output_file = str(sys.argv[2])
     shop_name = str(sys.argv[3])
-    no_mat = str(sys.argv[4])
-    extract(input_file, output_file, shop_name, no_mat)
+    no_mat_prefix = str(sys.argv[4])
+    extract(input_file, output_file, shop_name, no_mat_prefix)
